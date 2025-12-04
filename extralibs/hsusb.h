@@ -35,7 +35,10 @@
 #if (FUNCONF_USE_HSI) && !defined(FUSB_SOF_HSITRIM)
 #define FUSB_SOF_HSITRIM 1
 #endif
-#define TICKS_PER_HSITRIM (FUNCONF_PLL_MULTIPLIER * 20000 * 125) / 1000000 // SOF is sent every 125uS, each HSITRIM changes HSI by 20kHz
+#define TICKS_PER_HSITRIM ((FUNCONF_PLL_MULTIPLIER * 20000 * 125) / 1000000) // SOF is sent every 125uS, each HSITRIM changes HSI by 20kHz
+#define HSITRIM_TICK_LIMIT_HIGH (TICKS_PER_HSITRIM / 5)
+#define HSITRIM_TICK_LIMIT_LOW (-4 * TICKS_PER_HSITRIM / 5)
+
 typedef struct
 {
 	__IO uint8_t  BASE_CTRL;
