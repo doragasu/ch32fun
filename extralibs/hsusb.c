@@ -1,5 +1,6 @@
 #include "hsusb.h"
 #include "ch32fun.h"
+#include "ch32v30xhw.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -610,19 +611,32 @@ replycomplete:
 					break;
 
 				default:
-#if (USBHS_IMPL==1)
+//#if (USBHS_IMPL==1)
 					if( intfgst & CRB_UIS_TOG_OK )
-#else
-					if( UEP_CTRL_RX(ep) & (1<<4) ) // RB_UEP_R_TOG_MATCH
-#endif
+//#else
+//					if( UEP_CTRL_RX(ep) & (1<<4) ) // RB_UEP_R_TOG_MATCH
+//#endif
 					{
 						UEP_CTRL_RX(ep) ^= USBHS_UEP_R_TOG_DATA1;
-#if (USBHS_IMPL==2)
-						UEP_CTRL_RX(ep) = ( UEP_CTRL_RX(ep) & ~USBHS_UEP_R_RES_MASK) | USBHS_UEP_R_RES_ACK; // clear
-#endif
+						if (USBHSCTX.USBHS_Endp_Busy[ep])
+						{
+							// Endpoint busy, NAK transfer to be retried later
+							USBHSCTX.USBHS_rx_len[ep] = len;
+							UEP_CTRL_RX(ep) = (UEP_CTRL_RX(ep) & ~USBHS_UEP_R_RES_MASK) | USBHS_UEP_R_RES_NAK;
+							printf("rx nak\n");
+						}
+						else
+						{
 #if FUSB_USER_HANDLERS
-						HandleDataOut( ctx, ep, ctx->ENDPOINTS[ep-1], len );
+							USBHSCTX.USBHS_Endp_Busy[ep] = 1;
+							HandleDataOut( ctx, ep, ctx->ENDPOINTS[ep-1], len );
 #endif
+							UEP_CTRL_RX(ep) &= ~USBHS_UEP_R_RES_MASK; // ACK
+							printf("rx complete %d\n", len);
+						}
+//#if (USBHS_IMPL==2)
+//						UEP_CTRL_RX(ep) = ( UEP_CTRL_RX(ep) & ~USBHS_UEP_R_RES_MASK) | USBHS_UEP_R_RES_ACK; // clear
+//#endif
 					}
 					USBHS_DONE_RX(ep);
 					break;
@@ -847,6 +861,19 @@ void USBHS_InternalFinishSetup()
 		USBHSCTX.USBHS_Endp_Busy[i] = 0;
 	}
 }
+
+#if FUSB_OUT_FLOW_CONTROL > 0
+void USBHS_RxReady(int endp)
+{
+	if (USBHSCTX.USBHS_Endp_Busy[endp])
+	{
+		printf("rx ready (%d)\n", endp);
+		USBHSCTX.USBHS_Endp_Busy[endp] = 0;
+		UEP_CTRL_RX(endp) &= ~USBHS_UEP_R_RES_MASK; // ACK
+		HandleDataOut(&USBHSCTX, endp, USBHSCTX.ENDPOINTS[endp-1], USBHSCTX.USBHS_rx_len[endp]);
+	}
+}
+#endif
 
 int USBHSSetup()
 {

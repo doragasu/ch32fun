@@ -398,6 +398,10 @@ __HIGH_CODE void HandleDataOut( struct _USBState * ctx, int endp, uint8_t * data
 __HIGH_CODE int HandleSetupCustom( struct _USBState * ctx, int setup_code);
 #endif
 
+#if FUSB_OUT_FLOW_CONTROL > 0
+void USBHS_RxReady(int endp);
+#endif
+
 typedef enum
 {
 	USB_SPEED_FULL = 0,
@@ -460,6 +464,9 @@ struct _USBState
 #if FUSB_HID_INTERFACES > 0
 	uint8_t USBHS_HidIdle[FUSB_HID_INTERFACES];
 	uint8_t USBHS_HidProtocol[FUSB_HID_INTERFACES];
+#endif
+#if FUSB_OUT_FLOW_CONTROL > 0
+	volatile uint16_t USBHS_rx_len[FUSB_CONFIG_EPS];
 #endif
 	volatile uint8_t USBHS_Endp_Busy[FUSB_CONFIG_EPS];
 	volatile uint8_t USBHS_errata_dont_send_endpoint_in_window;
