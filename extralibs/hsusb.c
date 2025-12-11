@@ -651,12 +651,12 @@ replycomplete:
 #if (FUSB_SOF_HSITRIM)
 				int32_t diff = (int64_t)(systick_local - ctx->USBHS_sof_timestamp);
 				uint32_t trim = (RCC->CTLR & RCC_HSITRIM) >> 3;
-				if( diff > HSITRIM_TICK_LIMIT_HIGH && (trim > 0)) {
+				if( diff > HSITRIM_TICK_LIMIT_HIGH && diff <= HSITRIM_TICK_DESIST && (trim > 0)) {
 					uint32_t regtemp;
 					regtemp = RCC->CTLR & ~RCC_HSITRIM;
 					RCC->CTLR = regtemp | (--trim)<<3;
 				}
-				else if( diff < 0 && diff < HSITRIM_TICK_LIMIT_LOW && (trim < 31))
+				else if( diff < HSITRIM_TICK_LIMIT_LOW && (trim < 31))
 				{
 					uint32_t regtemp;
 					regtemp = RCC->CTLR & ~RCC_HSITRIM;

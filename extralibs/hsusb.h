@@ -38,6 +38,11 @@
 #define TICKS_PER_HSITRIM ((FUNCONF_PLL_MULTIPLIER * 20000 * 125) / 1000000) // SOF is sent every 125uS, each HSITRIM changes HSI by 20kHz
 #define HSITRIM_TICK_LIMIT_HIGH (TICKS_PER_HSITRIM / 5)
 #define HSITRIM_TICK_LIMIT_LOW (-4 * TICKS_PER_HSITRIM / 5)
+// Per V305 datasheet, clock should never deviate more than +2.5% for the entire
+// temp range. The lower limit is -3%, but since this value will only be checked
+// for positive tick drifts, we can use the 2.5% value.
+// HSI * PLL * 125us * 2.5%
+#define HSITRIM_TICK_DESIST (HSI_VALUE * FUNCONF_PLL_MULTIPLIER / 1000000 * 125 * 25 / 1000)
 
 typedef struct
 {
